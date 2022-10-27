@@ -1,2 +1,5 @@
-export * from './dates.dto';
-export * from './id.dto';
+import { DatesDto } from './dates.dto';
+import { IdDto } from './id.dto';
+import { CarsAvaliableDto } from './carAvaliable.dto';
+
+export { DatesDto, IdDto, CarsAvaliableDto };

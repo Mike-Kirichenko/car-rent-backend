@@ -1,9 +1,4 @@
-import { Type } from 'class-transformer';
-import { IsInt } from 'class-validator';
-import { IdDto } from 'src/common/dto/id.dto';
+import { CarsAvaliableDto } from '../../common/dto/carAvaliable.dto';
+import { GetCarsInfoDto } from './getCarInfo.dto';
 
-export class GetCarsInfoDto extends IdDto {
-  @IsInt()
-  @Type(() => Number)
-  month: number;
-}
+export { CarsAvaliableDto, GetCarsInfoDto };
