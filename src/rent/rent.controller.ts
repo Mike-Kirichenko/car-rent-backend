@@ -3,7 +3,7 @@ import { CarsAvaliableDto, IdDto, DatesDto } from 'src/common/dto';
 
 @Controller('rent')
 export class RentController {
-  @Get('/info/:id/:dateFrom/:dateTo')
+  @Get('/info/:dateFrom/:dateTo/:id')
   getPreCheckoutInfo(@Param() dto: CarsAvaliableDto) {
     const { id, dateFrom, dateTo } = dto;
     return {
