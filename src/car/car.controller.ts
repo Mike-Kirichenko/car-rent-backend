@@ -1,10 +1,12 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
-import { DateRangeDto } from '../common/dto/dateRange.dto';
+import { Controller, Param, Get } from '@nestjs/common';
+import { DatesDto, IdDto } from '../common/dto';
+import { GetCarsInfoDto } from './dto';
 
 @Controller('cars')
 export class CarController {
-  @Post('/avaliable/:id?')
-  checkAvailability(@Param('id') id: number, @Body() dto: DateRangeDto) {
+  @Get('/avaliability/:id?/:dateFrom/:dateTo')
+  checkAvailability(@Param() idDto: IdDto, @Param() dto: DatesDto) {
+    const { id } = idDto;
     const { dateFrom, dateTo } = dto;
     return {
       msg: `I'll check ${
@@ -13,8 +15,9 @@ export class CarController {
     };
   }
 
-  @Post('/stats/:id?')
-  getCarStats(@Param('id') id: number, @Body('month') month: number) {
+  @Get('/stats/:id?/:month')
+  getCarStats(@Param() dto: GetCarsInfoDto) {
+    const { id, month } = dto;
     return {
       msg: `I'll send ${id ? `car #${id}` : 'cars'} stats for ${month} month`,
     };

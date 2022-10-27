@@ -1,6 +1,6 @@
 import { IsDateString } from 'class-validator';
 
-export class DateRangeDto {
+export class DatesDto {
   @IsDateString()
   dateFrom: Date;
 
