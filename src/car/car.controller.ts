@@ -1,16 +1,13 @@
 import { Controller, Param, Get } from '@nestjs/common';
+import { CarService } from './car.service';
 import { GetCarsInfoDto, CarsAvaliableDto } from './dto';
 
 @Controller('cars')
 export class CarController {
+  constructor(private carService: CarService) {}
   @Get('/avaliability/:dateFrom/:dateTo/:id?')
   checkAvailability(@Param() dto: CarsAvaliableDto) {
-    const { id, dateFrom, dateTo } = dto;
-    return {
-      msg: `I'll check ${
-        id ? `car #${id}` : 'cars'
-      } availability from: ${dateFrom} to: ${dateTo}`,
-    };
+    return this.carService.checkAvaliability(dto);
   }
 
   @Get('/stats/:month/:id?')
