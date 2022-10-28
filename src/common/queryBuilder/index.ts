@@ -5,13 +5,13 @@ import { Pool } from 'pg';
 @Injectable()
 export class QueryBuilder {
   conn: any;
-  constructor(private configService: ConfigService) {
+  constructor(private config: ConfigService) {
     this.conn = new Pool({
-      user: this.configService.get('DB_USER'),
-      host: this.configService.get('DB_HOST'),
-      database: this.configService.get('DB_NAME'),
-      password: this.configService.get('DB_PASSWORD'),
-      port: this.configService.get('DB_PORT'),
+      user: this.config.get('DB_USER'),
+      host: this.config.get('DB_HOST'),
+      database: this.config.get('DB_NAME'),
+      password: this.config.get('DB_PASSWORD'),
+      port: this.config.get('DB_PORT'),
     });
   }
 
