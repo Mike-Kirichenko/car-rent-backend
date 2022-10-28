@@ -16,9 +16,7 @@ export class CarService {
         const rentedIndex = rentedCars.findIndex(
           (rentedCar: { carId: number }) => rentedCar.carId == id,
         );
-        return rentedIndex > -1
-          ? { carId: id, avaliable: false }
-          : { carId: id, avaliable: true };
+        return { carId: id, avaliable: rentedIndex > -1 };
       } else {
         const rentedCarIds = rentedCars
           .map((rentedCar: { carId: number }) => rentedCar.carId)
