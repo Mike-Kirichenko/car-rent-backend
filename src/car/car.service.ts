@@ -44,10 +44,12 @@ export class CarService {
     const endDate = new Date(`${year}-${Number(monthNum) + 1}-01`);
 
     //get correct dates
-    const dateFrom: string = formatDate(startDate);
-    const dateTo: string = formatDate(endDate);
+    const monthStart: string = formatDate(startDate);
+    const monthEnd: string = formatDate(endDate);
+    const monthStartObj = new Date(startDate);
+    const monthEndObj = new Date(endDate);
     const daysInMonth: number =
-      (new Date(dateTo).valueOf() - new Date(dateFrom).valueOf()) / oneDay;
+      (monthEndObj.valueOf() - monthStartObj.valueOf()) / oneDay;
 
     const query = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", car."LP", 
     "rent_list"."dateFrom" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
@@ -57,9 +59,8 @@ export class CarService {
       'TZ',
     )}' AS "dateTo" FROM car 
     INNER JOIN rent_list ON car.id = "rent_list"."carId"
-    WHERE "rent_list"."dateFrom" >='${dateFrom}' ${
-      id ? `AND "rent_list"."carId" = ${id}` : ''
-    }`;
+    WHERE ("rent_list"."dateFrom" >='${monthStart}' OR ("rent_list"."dateTo" >='${monthStart}' AND "rent_list"."dateTo" <='${monthEnd}')) 
+   ${id ? `AND "rent_list"."carId" = ${id}` : ''}`;
 
     const monthEmpCars = await this.queryBuilder.runQuery(query);
     if (monthEmpCars) {
@@ -76,7 +77,9 @@ export class CarService {
           const dateTo: Date = new Date(car.dateTo);
           const dateFrom: Date = new Date(car.dateFrom);
           if (dateTo.getMonth() != dateFrom.getMonth()) {
-            dateDiff = daysInMonth - dateFrom.getDate();
+            if (dateTo >= monthStartObj && dateTo < monthEndObj) {
+              dateDiff = dateTo.getDate() - monthStartObj.getDate();
+            } else dateDiff = daysInMonth - dateFrom.getDate();
           } else dateDiff = (dateTo.valueOf() - dateFrom.valueOf()) / oneDay;
           return {
             rentalId: car.rentalId,
