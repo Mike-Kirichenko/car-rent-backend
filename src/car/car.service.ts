@@ -34,7 +34,8 @@ export class CarService {
     return avaliableCars;
   }
 
-  async checkAvgCarEmployment(dto) {
+  async checkAvgCarEmployment(dto: { id: number; month: string }) {
+    const oneDay = 24 * 60 * 60 * 1000;
     const { id, month } = dto;
     const [year, monthNum] = month.split('-');
 
@@ -46,8 +47,7 @@ export class CarService {
     const dateFrom: string = formatDate(startDate);
     const dateTo: string = formatDate(endDate);
     const daysInMonth: number =
-      (new Date(dateTo).valueOf() - new Date(dateFrom).valueOf()) /
-      (24 * 60 * 60 * 1000);
+      (new Date(dateTo).valueOf() - new Date(dateFrom).valueOf()) / oneDay;
 
     const query = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", car."LP", 
     "rent_list"."dateFrom" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
@@ -57,10 +57,13 @@ export class CarService {
       'TZ',
     )}' AS "dateTo" FROM car 
     INNER JOIN rent_list ON car.id = "rent_list"."carId"
-    WHERE "rent_list"."dateFrom" >='${dateFrom}' AND "rent_list"."dateTo" < '${dateTo}'`;
-    const currMonthEmpCars = await this.queryBuilder.runQuery(query);
-    if (currMonthEmpCars) {
-      const mapped = currMonthEmpCars.map(
+    WHERE "rent_list"."dateFrom" >='${dateFrom}' AND "rent_list"."dateTo" < '${dateTo}' ${
+      id ? `AND "rent_list"."carId" = ${id}` : ''
+    }`;
+
+    const monthEmpCars = await this.queryBuilder.runQuery(query);
+    if (monthEmpCars) {
+      const carsWithTotalDays = monthEmpCars.map(
         (car: {
           rentalId: number;
           carId: number;
@@ -72,7 +75,7 @@ export class CarService {
           const dateTo: Date = new Date(car.dateTo);
           const dateFrom: Date = new Date(car.dateFrom);
           const dateDiff: number =
-            (dateTo.valueOf() - dateFrom.valueOf()) / (24 * 60 * 60 * 1000);
+            (dateTo.valueOf() - dateFrom.valueOf()) / oneDay;
           return {
             rentalId: car.rentalId,
             carId: car.carId,
@@ -81,27 +84,35 @@ export class CarService {
           };
         },
       );
-      // return mapped;
-      const finalArray = [];
-      mapped.forEach((rental, index) => {
-        const dubInd = mapped.findIndex((el) => (el.carId = rental.carId));
-        if (dubInd != index) {
-          const obj = {
-            rentalId: rental.rentalId,
-            carId: rental.carId,
-            LP: rental.LP,
-            daysInMonth: mapped[dubInd].totalDays + rental.totalDays,
-          };
-          finalArray.push(obj);
-        }
-      });
-      return finalArray.map((el) => {
-        const obj = {
-          ...el,
-          daysPercentInMonth: (el.daysInMonth / daysInMonth) * 100,
-        };
-        return obj;
-      });
+
+      const rentedCars = [];
+      carsWithTotalDays.forEach(
+        (car: {
+          rentalId: number;
+          carId: number;
+          totalDays: number;
+          LP: string;
+        }) => {
+          if (!rentedCars.length) rentedCars.push(car);
+          else {
+            const carDubIndex = rentedCars.findIndex(
+              (finalArrCar) =>
+                car.carId === finalArrCar.carId &&
+                car.rentalId !== finalArrCar.rentalId,
+            );
+            if (carDubIndex > -1) {
+              rentedCars[carDubIndex].totalDays += car.totalDays;
+            } else rentedCars.push(car);
+          }
+        },
+      );
+
+      return rentedCars.map((car) => ({
+        carId: car.carId,
+        totalDays: car.totalDays,
+        LP: car.LP,
+        percentInMonth: Math.round((car.totalDays / daysInMonth) * 100),
+      }));
     }
   }
 }
