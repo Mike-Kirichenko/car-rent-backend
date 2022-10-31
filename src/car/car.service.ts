@@ -57,13 +57,13 @@ export class CarService {
       'TZ',
     )}' AS "dateTo" FROM car 
     INNER JOIN rent_list ON car.id = "rent_list"."carId"
-    WHERE "rent_list"."dateFrom" >='${dateFrom}' AND "rent_list"."dateTo" < '${dateTo}' ${
+    WHERE "rent_list"."dateFrom" >='${dateFrom}' ${
       id ? `AND "rent_list"."carId" = ${id}` : ''
     }`;
 
     const monthEmpCars = await this.queryBuilder.runQuery(query);
     if (monthEmpCars) {
-      const carsWithTotalDays = monthEmpCars.map(
+      const carsWithdaysInMonth = monthEmpCars.map(
         (car: {
           rentalId: number;
           carId: number;
@@ -72,25 +72,27 @@ export class CarService {
           dateFrom: Date;
           dateTo: Date;
         }) => {
+          let dateDiff: number;
           const dateTo: Date = new Date(car.dateTo);
           const dateFrom: Date = new Date(car.dateFrom);
-          const dateDiff: number =
-            (dateTo.valueOf() - dateFrom.valueOf()) / oneDay;
+          if (dateTo.getMonth() != dateFrom.getMonth()) {
+            dateDiff = daysInMonth - dateFrom.getDate();
+          } else dateDiff = (dateTo.valueOf() - dateFrom.valueOf()) / oneDay;
           return {
             rentalId: car.rentalId,
             carId: car.carId,
-            totalDays: dateDiff,
+            daysInMonth: dateDiff,
             LP: car.LP,
           };
         },
       );
 
       const rentedCars = [];
-      carsWithTotalDays.forEach(
+      carsWithdaysInMonth.forEach(
         (car: {
           rentalId: number;
           carId: number;
-          totalDays: number;
+          daysInMonth: number;
           LP: string;
         }) => {
           if (!rentedCars.length) rentedCars.push(car);
@@ -101,7 +103,7 @@ export class CarService {
                 car.rentalId !== finalArrCar.rentalId,
             );
             if (carDubIndex > -1) {
-              rentedCars[carDubIndex].totalDays += car.totalDays;
+              rentedCars[carDubIndex].daysInMonth += car.daysInMonth;
             } else rentedCars.push(car);
           }
         },
@@ -109,9 +111,9 @@ export class CarService {
 
       return rentedCars.map((car) => ({
         carId: car.carId,
-        totalDays: car.totalDays,
+        daysInMonth: car.daysInMonth,
         LP: car.LP,
-        percentInMonth: Math.round((car.totalDays / daysInMonth) * 100),
+        percentInMonth: Math.round((car.daysInMonth / daysInMonth) * 100),
       }));
     }
   }
