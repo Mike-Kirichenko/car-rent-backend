@@ -12,9 +12,6 @@ export class CarController {
 
   @Get('/stats/:month/:id?')
   getCarStats(@Param() dto: GetCarsInfoDto) {
-    const { id, month } = dto;
-    return {
-      msg: `I'll send ${id ? `car #${id}` : 'cars'} stats for ${month}`,
-    };
+    return this.carService.checkAvgCarEmployment(dto);
   }
 }
