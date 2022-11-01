@@ -21,9 +21,10 @@ export class CarService {
     const dateToDiff = dateToFinalDate.getDate() + 3;
     dateToFinalDate.setDate(dateToDiff);
 
-    const query = `SELECT * FROM car WHERE id NOT IN (SELECT "carId" FROM rent_list 
-    WHERE 'rent_list.dateFrom' >= '${dateFromFinalDate}' 
-    AND 'rent_list.dateTo' <= '${dateToFinalDate}')`;
+    const query = `SELECT * FROM car WHERE id NOT IN (SELECT "rent_list"."carId" FROM rent_list 
+    WHERE "rent_list"."dateFrom" <= '${formatDate(dateFromFinalDate)}' 
+    AND "rent_list"."dateTo" <= '${formatDate(dateToFinalDate)}')`;
+
     const avaliableCars = await this.queryBuilder.runQuery(query);
     if (id) {
       const avaliableCarIndex = avaliableCars.findIndex(
@@ -34,8 +35,64 @@ export class CarService {
     return avaliableCars;
   }
 
+  private getCarWithDaysInMonth(
+    cars: [...any],
+    daysInMonth: number,
+    monthStart: Date,
+    monthEnd: Date,
+  ) {
+    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
+    const carsWithdaysInMonth = cars.map(
+      (car: {
+        rentalId: number;
+        carId: number;
+        name: string;
+        LP: string;
+        dateFrom: Date;
+        dateTo: Date;
+      }) => {
+        let dateDiff: number;
+        const dateTo: Date = new Date(car.dateTo);
+        const dateFrom: Date = new Date(car.dateFrom);
+        if (dateTo.getMonth() != dateFrom.getMonth()) {
+          if (dateTo >= monthStart && dateTo < monthEnd) {
+            dateDiff = dateTo.getDate() - monthStart.getDate();
+          } else dateDiff = daysInMonth - dateFrom.getDate();
+        } else {
+          dateDiff = (dateTo.valueOf() - dateFrom.valueOf()) / ONE_DAY_IN_MS;
+        }
+        return {
+          rentalId: car.rentalId,
+          carId: car.carId,
+          daysInMonth: dateDiff,
+          LP: car.LP,
+        };
+      },
+    );
+    return carsWithdaysInMonth;
+  }
+
+  private getRentedCarsGrouped(cars: [...any]) {
+    const grouped = new Object();
+    cars.forEach(
+      (car: {
+        rentalId: number;
+        carId: number;
+        daysInMonth: number;
+        LP: string;
+      }) => {
+        if (!grouped[car.carId]) {
+          grouped[car.carId] = car;
+        } else {
+          grouped[car.carId].daysInMonth += car.daysInMonth;
+        }
+      },
+    );
+    return Object.values(grouped);
+  }
+
   async checkAvgCarEmployment(dto: { id: number; month: string }) {
-    const oneDay = 24 * 60 * 60 * 1000;
+    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
     const { id, month } = dto;
     const [year, monthNum] = month.split('-');
 
@@ -49,75 +106,46 @@ export class CarService {
     const monthStartObj = new Date(startDate);
     const monthEndObj = new Date(endDate);
     const daysInMonth: number =
-      (monthEndObj.valueOf() - monthStartObj.valueOf()) / oneDay;
+      (monthEndObj.valueOf() - monthStartObj.valueOf()) / ONE_DAY_IN_MS;
 
-    const query = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", car."LP", 
+    const employedCarsQuery = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", "car"."LP", 
     "rent_list"."dateFrom" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
       'TZ',
     )}' AS "dateFrom", 
     "rent_list"."dateTo" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
       'TZ',
-    )}' AS "dateTo" FROM car 
-    INNER JOIN rent_list ON car.id = "rent_list"."carId"
-    WHERE ("rent_list"."dateFrom" >='${monthStart}' OR ("rent_list"."dateTo" >='${monthStart}' AND "rent_list"."dateTo" <='${monthEnd}')) 
+    )}' AS "dateTo" FROM rent_list 
+   RIGHT JOIN car ON "car"."id" = "rent_list"."carId"
+    WHERE ("rent_list"."dateFrom" <'${monthEnd}' AND "rent_list"."dateTo" >='${monthStart}') 
    ${id ? `AND "rent_list"."carId" = ${id}` : ''}`;
 
-    const monthEmpCars = await this.queryBuilder.runQuery(query);
-    if (monthEmpCars) {
-      const carsWithdaysInMonth = monthEmpCars.map(
-        (car: {
-          rentalId: number;
-          carId: number;
-          name: string;
-          LP: string;
-          dateFrom: Date;
-          dateTo: Date;
-        }) => {
-          let dateDiff: number;
-          const dateTo: Date = new Date(car.dateTo);
-          const dateFrom: Date = new Date(car.dateFrom);
-          if (dateTo.getMonth() != dateFrom.getMonth()) {
-            if (dateTo >= monthStartObj && dateTo < monthEndObj) {
-              dateDiff = dateTo.getDate() - monthStartObj.getDate();
-            } else dateDiff = daysInMonth - dateFrom.getDate();
-          } else dateDiff = (dateTo.valueOf() - dateFrom.valueOf()) / oneDay;
-          return {
-            rentalId: car.rentalId,
-            carId: car.carId,
-            daysInMonth: dateDiff,
-            LP: car.LP,
-          };
-        },
-      );
+    const unemployedCarsQuery = `SELECT "car"."id" AS "carId", 
+    0 AS "daysInMonth", "car"."LP", 
+    0 AS "percentInMonth" FROM car 
+    WHERE "car"."id" NOT IN (SELECT "rent_list"."carId" FROM rent_list 
+    WHERE "rent_list"."dateFrom" <'${monthEnd}' 
+    AND "rent_list"."dateTo" >= '${monthStart}')`;
 
-      const rentedCars = [];
-      carsWithdaysInMonth.forEach(
-        (car: {
-          rentalId: number;
-          carId: number;
-          daysInMonth: number;
-          LP: string;
-        }) => {
-          if (!rentedCars.length) rentedCars.push(car);
-          else {
-            const carDubIndex = rentedCars.findIndex(
-              (finalArrCar) =>
-                car.carId === finalArrCar.carId &&
-                car.rentalId !== finalArrCar.rentalId,
-            );
-            if (carDubIndex > -1) {
-              rentedCars[carDubIndex].daysInMonth += car.daysInMonth;
-            } else rentedCars.push(car);
-          }
-        },
-      );
+    const monthEmpCars = await this.queryBuilder.runQuery(employedCarsQuery);
+    const unemployedCars = await this.queryBuilder.runQuery(
+      unemployedCarsQuery,
+    );
 
-      return rentedCars.map((car) => ({
-        carId: car.carId,
-        daysInMonth: car.daysInMonth,
-        LP: car.LP,
-        percentInMonth: Math.round((car.daysInMonth / daysInMonth) * 100),
-      }));
-    }
+    const carsWithdaysInMonth = this.getCarWithDaysInMonth(
+      monthEmpCars,
+      daysInMonth,
+      monthStartObj,
+      monthEndObj,
+    );
+
+    const rentedCarsGrouped = this.getRentedCarsGrouped(carsWithdaysInMonth);
+    const rntCarsWithUsgPrct = rentedCarsGrouped.map((car) => ({
+      carId: car.carId,
+      daysInMonth: car.daysInMonth,
+      LP: car.LP,
+      percentInMonth: Math.round((car.daysInMonth / daysInMonth) * 100),
+    }));
+
+    return rntCarsWithUsgPrct.concat(unemployedCars);
   }
 }
