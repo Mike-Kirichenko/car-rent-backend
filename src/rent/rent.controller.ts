@@ -7,7 +7,7 @@ export class RentController {
   constructor(private rentService: RentService) {}
   @Get('/info/:dateFrom/:dateTo/:id')
   getPreCheckoutInfo(@Param() dto: CarsAvaliableDto) {
-    return this.rentService.countRentalPrice(dto);
+    return this.rentService.getRentalPrice(dto);
   }
 
   @Post('/checkout/:id')
