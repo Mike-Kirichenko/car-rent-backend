@@ -146,6 +146,12 @@ export class CarService {
       percentInMonth: Math.round((car.daysInMonth / daysInMonth) * 100),
     }));
 
-    return rntCarsWithUsgPrct.concat(unemployedCars);
+    const finalData = id
+      ? rntCarsWithUsgPrct.find((car) => car.carId === id) ||
+        unemployedCars.find((car) => car.carId === id) ||
+        {}
+      : rntCarsWithUsgPrct.concat(unemployedCars);
+
+    return finalData;
   }
 }
