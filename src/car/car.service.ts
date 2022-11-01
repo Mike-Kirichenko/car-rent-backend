@@ -3,6 +3,21 @@ import { QueryBuilder } from 'src/common/queryBuilder';
 import { formatDate } from 'src/common/helpers';
 import { ConfigService } from '@nestjs/config';
 
+interface CarReport {
+  readonly name: string;
+  readonly carId: number;
+  readonly daysInMonth: number;
+  readonly LP: string;
+}
+
+interface CarReportWithDaysPrc extends CarReport {
+  readonly name: string;
+  readonly carId: number;
+  readonly daysInMonth: number;
+  readonly LP: string;
+  percentInMonth: number;
+}
+
 @Injectable()
 export class CarService {
   constructor(
@@ -46,7 +61,6 @@ export class CarService {
       (car: {
         rentalId: number;
         carId: number;
-        name: string;
         LP: string;
         dateFrom: Date;
         dateTo: Date;
@@ -74,20 +88,13 @@ export class CarService {
 
   private getRentedCarsGrouped(cars: [...any]) {
     const grouped = new Object();
-    cars.forEach(
-      (car: {
-        rentalId: number;
-        carId: number;
-        daysInMonth: number;
-        LP: string;
-      }) => {
-        if (!grouped[car.carId]) {
-          grouped[car.carId] = car;
-        } else {
-          grouped[car.carId].daysInMonth += car.daysInMonth;
-        }
-      },
-    );
+    cars.forEach((car: CarReport) => {
+      if (!grouped[car.carId]) {
+        grouped[car.carId] = car;
+      } else {
+        grouped[car.carId].daysInMonth += car.daysInMonth;
+      }
+    });
     return Object.values(grouped);
   }
 
@@ -147,8 +154,10 @@ export class CarService {
     }));
 
     const finalData = id
-      ? rntCarsWithUsgPrct.find((car) => car.carId === id) ||
-        unemployedCars.find((car) => car.carId === id) ||
+      ? rntCarsWithUsgPrct.find(
+          (car: CarReportWithDaysPrc) => car.carId === id,
+        ) ||
+        unemployedCars.find((car: CarReport) => car.carId === id) ||
         {}
       : rntCarsWithUsgPrct.concat(unemployedCars);
 
