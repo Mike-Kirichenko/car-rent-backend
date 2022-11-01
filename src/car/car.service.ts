@@ -20,6 +20,7 @@ interface CarReportWithDaysPrc extends CarReport {
 
 @Injectable()
 export class CarService {
+  private ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
   constructor(
     private queryBuilder: QueryBuilder,
     private config: ConfigService,
@@ -56,7 +57,6 @@ export class CarService {
     monthStart: Date,
     monthEnd: Date,
   ) {
-    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
     const carsWithdaysInMonth = cars.map(
       (car: {
         rentalId: number;
@@ -73,7 +73,8 @@ export class CarService {
             dateDiff = dateTo.getDate() - monthStart.getDate();
           } else dateDiff = daysInMonth - dateFrom.getDate();
         } else {
-          dateDiff = (dateTo.valueOf() - dateFrom.valueOf()) / ONE_DAY_IN_MS;
+          dateDiff =
+            (dateTo.valueOf() - dateFrom.valueOf()) / this.ONE_DAY_IN_MS;
         }
         return {
           rentalId: car.rentalId,
@@ -99,13 +100,16 @@ export class CarService {
   }
 
   async checkAvgCarEmployment(dto: { id: number; month: string }) {
-    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
     const { id, month } = dto;
     const [year, monthNum] = month.split('-');
 
     //get month's first and last day
     const startDate = new Date(`${year}-${monthNum}-01`);
-    const endDate = new Date(`${year}-${Number(monthNum) + 1}-01`);
+    const endDate = new Date(
+      Number(monthNum) === 12
+        ? `${Number(year) + 1}-01-01`
+        : `${year}-${Number(monthNum) + 1}-01`,
+    );
 
     //get correct dates
     const monthStart: string = formatDate(startDate);
@@ -113,7 +117,7 @@ export class CarService {
     const monthStartObj = new Date(startDate);
     const monthEndObj = new Date(endDate);
     const daysInMonth: number =
-      (monthEndObj.valueOf() - monthStartObj.valueOf()) / ONE_DAY_IN_MS;
+      (monthEndObj.valueOf() - monthStartObj.valueOf()) / this.ONE_DAY_IN_MS;
 
     const employedCarsQuery = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", "car"."LP", 
     "rent_list"."dateFrom" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
@@ -157,7 +161,7 @@ export class CarService {
       ? rntCarsWithUsgPrct.find(
           (car: CarReportWithDaysPrc) => car.carId === id,
         ) ||
-        unemployedCars.find((car: CarReport) => car.carId === id) ||
+        unemployedCars.find((car: CarReportWithDaysPrc) => car.carId === id) ||
         {}
       : rntCarsWithUsgPrct.concat(unemployedCars);
 

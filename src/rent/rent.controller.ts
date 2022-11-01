@@ -1,14 +1,13 @@
 import { Body, Controller, Param, Get, Post } from '@nestjs/common';
 import { CarsAvaliableDto, IdDto, DatesDto } from 'src/common/dto';
+import { RentService } from './rent.service';
 
 @Controller('rent')
 export class RentController {
+  constructor(private rentService: RentService) {}
   @Get('/info/:dateFrom/:dateTo/:id')
   getPreCheckoutInfo(@Param() dto: CarsAvaliableDto) {
-    const { id, dateFrom, dateTo } = dto;
-    return {
-      msg: `I'll check how much it will cost to rent car #${id} from: ${dateFrom} to: ${dateTo}`,
-    };
+    return this.rentService.countRentalPrice(dto);
   }
 
   @Post('/checkout/:id')
