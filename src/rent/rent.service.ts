@@ -93,7 +93,7 @@ export class RentService {
     }
 
     const daysOfRental: number = getDayDiff(dateTo, dateFrom);
-    const cost = this.countRentalPrice(daysOfRental);
+    const cost: number = this.countRentalPrice(daysOfRental);
 
     return {
       carId: id,
