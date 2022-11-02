@@ -32,9 +32,20 @@ export class RentService {
     const dateToDiff = dateToWithDelay.getDate() + 3;
     dateToWithDelay.setDate(dateToDiff);
 
-    const query = `SELECT * FROM car WHERE id NOT IN (SELECT "rent_list"."carId" FROM rent_list 
-    WHERE "rent_list"."dateFrom" <= '${formatDate(dateFromWithDelay)}' 
-    AND "rent_list"."dateTo" <= '${formatDate(dateToWithDelay)}')`;
+    const query = `SELECT * FROM car WHERE id NOT IN 
+    (
+      SELECT "rent_list"."carId" AS "id" FROM rent_list 
+      WHERE
+      (
+        "rent_list"."dateFrom" BETWEEN '${formatDate(
+          dateFromWithDelay,
+        )}' AND '${formatDate(dateToWithDelay)}'
+        OR
+        "rent_list"."dateTo" BETWEEN '${formatDate(
+          dateFromWithDelay,
+        )}' AND '${formatDate(dateToWithDelay)}'
+      ) 
+    )`;
 
     const avaliableCars = await this.queryBuilder.runQuery(query);
     if (id) {
@@ -102,8 +113,12 @@ export class RentService {
     if (!carInfo.avaliable) {
       throw new BadRequestException(carInfo);
     }
+
+    const totalDays = getDayDiff(dateTo, dateFrom);
+    const totalPrice = this.countRentalPrice(totalDays);
+
     const query = `INSERT INTO rent_list ("carId", "dateFrom", "dateTo") VALUES ('${id}', '${dateFrom}', '${dateTo}')`;
     const newRental = await this.queryBuilder.runQuery(query);
-    return { success: Boolean(newRental) };
+    return newRental ? { success: true, totalPrice } : { success: false };
   }
 }
