@@ -25,7 +25,7 @@ export class RentService {
     }
 
     const dateFromWithDelay = new Date(dateFrom);
-    const dateFromDiff = dateFromWithDelay.getDate() + 3;
+    const dateFromDiff = dateFromWithDelay.getDate() - 3;
     dateFromWithDelay.setDate(dateFromDiff);
 
     const dateToWithDelay = new Date(dateTo);
@@ -34,7 +34,7 @@ export class RentService {
 
     const query = `SELECT * FROM car WHERE id NOT IN 
     (
-      SELECT "rent_list"."carId" AS "id" FROM rent_list 
+      SELECT "rent_list"."carId" FROM rent_list 
       WHERE
       (
         "rent_list"."dateFrom" BETWEEN '${formatDate(
@@ -59,22 +59,22 @@ export class RentService {
 
   private countRentalPrice(days: number): number {
     let sum = 0;
-    if (days === 15) {
-      sum +=
-        4 * this.basicPrice +
-        5 * (this.basicPrice - this.basicPrice * this.basicSale) +
-        6 * (this.basicPrice - this.basicPrice * this.basicSale * 2);
-    } else {
-      for (let i = 1; i <= days; i++) {
-        if (i >= 1 && i <= 4) {
-          sum += this.basicPrice;
-        } else if (i >= 5 && i <= 9) {
-          sum += this.basicPrice - this.basicPrice * this.basicSale;
-        } else if (i >= 10 && i <= 17) {
-          sum += this.basicPrice - this.basicPrice * this.basicSale * 2;
-        } else if (i >= 18 && i <= 29) {
-          sum += this.basicPrice - this.basicPrice * this.basicSale * 3;
-        }
+    if (days < 0)
+      throw new BadRequestException({
+        msg: `Invalid dates range`,
+      });
+
+    if (days === 0) return this.basicPrice;
+
+    for (let i = 1; i <= days; i++) {
+      if (i >= 1 && i <= 4) {
+        sum += this.basicPrice;
+      } else if (i >= 5 && i <= 9) {
+        sum += this.basicPrice - this.basicPrice * this.basicSale;
+      } else if (i >= 10 && i <= 17) {
+        sum += this.basicPrice - this.basicPrice * this.basicSale * 2;
+      } else if (i >= 18 && i <= 29) {
+        sum += this.basicPrice - this.basicPrice * this.basicSale * 3;
       }
     }
 
@@ -93,6 +93,7 @@ export class RentService {
     }
 
     const daysOfRental: number = getDayDiff(dateTo, dateFrom);
+
     const cost: number = this.countRentalPrice(daysOfRental);
 
     return {
@@ -117,7 +118,7 @@ export class RentService {
     const totalDays = getDayDiff(dateTo, dateFrom);
     const totalPrice = this.countRentalPrice(totalDays);
 
-    const query = `INSERT INTO rent_list ("carId", "dateFrom", "dateTo") VALUES ('${id}', '${dateFrom}', '${dateTo}')`;
+    const query = `INSERT INTO rent_list ("carId", "dateFrom", "dateTo", "totalPrice") VALUES ('${id}', '${dateFrom}', '${dateTo}', ${totalPrice})`;
     const newRental = await this.queryBuilder.runQuery(query);
     return newRental ? { success: true, totalPrice } : { success: false };
   }
