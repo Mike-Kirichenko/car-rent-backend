@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { QueryBuilder } from 'src/common/queryBuilder';
+import { QueryBuilder } from 'src/common/classes/queryBuilder';
 import { RentController } from './rent.controller';
 import { RentService } from './rent.service';
 

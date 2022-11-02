@@ -5,6 +5,12 @@ import { RentService } from './rent.service';
 @Controller('rent')
 export class RentController {
   constructor(private rentService: RentService) {}
+
+  @Get('/avaliability/:dateFrom/:dateTo/:id?')
+  checkAvailability(@Param() dto: CarsAvaliableDto) {
+    return this.rentService.checkAvaliability(dto);
+  }
+
   @Get('/info/:dateFrom/:dateTo/:id')
   getPreCheckoutInfo(@Param() dto: CarsAvaliableDto) {
     return this.rentService.getRentalPrice(dto);
@@ -12,10 +18,6 @@ export class RentController {
 
   @Post('/checkout/:id')
   checkout(@Param() idDto: IdDto, @Body() bodyDto: DatesDto) {
-    const { id } = idDto;
-    const { dateFrom, dateTo } = bodyDto;
-    return {
-      msg: `I'll checkout car #${id} from: ${dateFrom} to: ${dateTo}`,
-    };
+    return this.rentService.checkout(idDto, bodyDto);
   }
 }
