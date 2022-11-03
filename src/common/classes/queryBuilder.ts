@@ -18,9 +18,9 @@ export class QueryBuilder {
   async runQuery(query: string) {
     try {
       const res = await this.conn.query(query);
-      return res.rows;
-    } catch (error) {
-      throw new BadRequestException(error);
+      return res.command === 'SELECT' ? res.rows : res.rowCount;
+    } catch ({ message: msg }) {
+      throw new BadRequestException({ msg });
     }
   }
 }
