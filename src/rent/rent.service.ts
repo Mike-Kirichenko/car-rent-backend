@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, HttpException } from '@nestjs/common';
 import { formatDate, getDayDiff, isWeekEndDay } from 'src/common/helpers';
 import { QueryBuilder } from 'src/common/classes/queryBuilder';
 
@@ -93,9 +93,7 @@ export class RentService {
     const foundCar: [{ id: number }] = await this.queryBuilder.runQuery(query);
 
     if (!foundCar.length) {
-      throw new BadRequestException({
-        msg: `car with id:${id} doesn't exist`,
-      });
+      throw new HttpException(`car with id:${id} doesn't exist`, 404);
     }
 
     const daysOfRental: number = getDayDiff(dateTo, dateFrom);
