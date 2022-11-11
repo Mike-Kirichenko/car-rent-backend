@@ -12,12 +12,6 @@ export class RentService {
     const { id, dateFrom, dateTo } = dto;
     const totalDays = getDayDiff(dateTo, dateFrom);
 
-    if (totalDays < 0) {
-      throw new BadRequestException({
-        msg: `Invalid dates range`,
-      });
-    }
-
     if (totalDays > 30) {
       throw new BadRequestException({
         msg: `car can't be rented for more than 30 days`,

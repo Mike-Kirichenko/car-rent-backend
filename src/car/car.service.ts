@@ -2,21 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryBuilder } from 'src/common/classes/queryBuilder';
 import { formatDate, getDayDiff } from 'src/common/helpers';
 import { ConfigService } from '@nestjs/config';
-
-interface CarReport {
-  readonly name: string;
-  readonly carId: number;
-  readonly daysInMonth: number;
-  readonly LP: string;
-}
-
-interface CarReportWithDaysPrc extends CarReport {
-  readonly name: string;
-  readonly carId: number;
-  readonly daysInMonth: number;
-  readonly LP: string;
-  percentInMonth: number;
-}
+import { CarReport, CarMonthlyReport } from './carReportInterfaces';
 
 @Injectable()
 export class CarService {
@@ -72,6 +58,37 @@ export class CarService {
     return Object.values(grouped);
   }
 
+  async getType(
+    type: string,
+    monthStart: string,
+    monthEnd: string,
+    id: number,
+  ): Promise<CarMonthlyReport[]> {
+    let query: string;
+    if (type === 'employed') {
+      query = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", "car"."LP", 
+    "rent_list"."dateFrom" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
+      'TZ',
+    )}' AS "dateFrom", 
+    "rent_list"."dateTo" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
+      'TZ',
+    )}' AS "dateTo" FROM rent_list 
+   RIGHT JOIN car ON "car"."id" = "rent_list"."carId"
+    WHERE ("rent_list"."dateFrom" <'${monthEnd}' AND "rent_list"."dateTo" >='${monthStart}') 
+   ${id ? `AND "rent_list"."carId" = ${id}` : ''}`;
+    } else if (type === 'unemployed') {
+      query = `SELECT "car"."id" AS "carId", 
+      0 AS "daysInMonth", "car"."LP", 
+      0 AS "percentInMonth" FROM car 
+      WHERE "car"."id" NOT IN (SELECT "rent_list"."carId" FROM rent_list 
+      WHERE "rent_list"."dateFrom" <'${monthEnd}' 
+      AND "rent_list"."dateTo" >= '${monthStart}')`;
+    }
+
+    const cars = await this.queryBuilder.runQuery(query);
+    return cars;
+  }
+
   async checkAvgCarEmployment(dto: { id: number; month: string }) {
     const { id, month } = dto;
     const [year, monthNum] = month.split('-');
@@ -91,31 +108,21 @@ export class CarService {
     const monthEndObj = new Date(endDate);
     const daysInMonth: number = getDayDiff(monthEndObj, monthStartObj);
 
-    const employedCarsQuery = `SELECT "rent_list"."carId", rent_list.id AS "rentalId", "car"."LP", 
-    "rent_list"."dateFrom" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
-      'TZ',
-    )}' AS "dateFrom", 
-    "rent_list"."dateTo" AT TIME ZONE 'GMT' AT TIME ZONE '${this.config.get(
-      'TZ',
-    )}' AS "dateTo" FROM rent_list 
-   RIGHT JOIN car ON "car"."id" = "rent_list"."carId"
-    WHERE ("rent_list"."dateFrom" <'${monthEnd}' AND "rent_list"."dateTo" >='${monthStart}') 
-   ${id ? `AND "rent_list"."carId" = ${id}` : ''}`;
-
-    const unemployedCarsQuery = `SELECT "car"."id" AS "carId", 
-    0 AS "daysInMonth", "car"."LP", 
-    0 AS "percentInMonth" FROM car 
-    WHERE "car"."id" NOT IN (SELECT "rent_list"."carId" FROM rent_list 
-    WHERE "rent_list"."dateFrom" <'${monthEnd}' 
-    AND "rent_list"."dateTo" >= '${monthStart}')`;
-
-    const monthEmpCars = await this.queryBuilder.runQuery(employedCarsQuery);
-    const unemployedCars = await this.queryBuilder.runQuery(
-      unemployedCarsQuery,
+    const employedCars: CarMonthlyReport[] = await this.getType(
+      'employed',
+      monthStart,
+      monthEnd,
+      id ? id : null,
+    );
+    const unemployedCars: CarMonthlyReport[] = await this.getType(
+      'unemployed',
+      monthStart,
+      monthEnd,
+      id ? id : null,
     );
 
     const carsWithdaysInMonth = this.getCarWithDaysInMonth(
-      monthEmpCars,
+      employedCars,
       daysInMonth,
       monthStartObj,
       monthEndObj,
@@ -130,10 +137,8 @@ export class CarService {
     }));
 
     const finalData = id
-      ? rntCarsWithUsgPrct.find(
-          (car: CarReportWithDaysPrc) => car.carId === id,
-        ) ||
-        unemployedCars.find((car: CarReportWithDaysPrc) => car.carId === id) ||
+      ? rntCarsWithUsgPrct.find((car: CarMonthlyReport) => car.carId === id) ||
+        unemployedCars.find((car: CarMonthlyReport) => car.carId === id) ||
         {}
       : rntCarsWithUsgPrct.concat(unemployedCars);
 
