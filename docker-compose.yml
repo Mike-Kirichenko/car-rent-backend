@@ -27,7 +27,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - '${DB_EXTERNAL_PORT}:${DB_EXTERNAL_PORT}'
+      - '${DB_EXTERNAL_PORT}:${DB_PORT}'
     volumes:
       - car_rent_api:/var/lib/postgresql/data
 
