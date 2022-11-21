@@ -33,7 +33,7 @@ export class AppModule implements OnModuleInit {
     let carsQueryString = `INSERT INTO car (name, "LP") VALUES `;
     let rentalQueryString = `INSERT INTO "rent_list" ("carId", "dateFrom", "dateTo", "totalPrice") VALUES `;
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 5; i++) {
       const carObject = {
         name: faker.vehicle.vehicle(),
         LP: faker.vehicle.vrm(),
@@ -41,7 +41,7 @@ export class AppModule implements OnModuleInit {
       carTestData.push(carObject);
     }
 
-    while (rentListData.length < 500) {
+    while (rentListData.length < 50) {
       let [dateFrom, dateTo] = faker.date.betweens(
         '2017-01-01T00:00:00.000Z',
         `${new Date().getFullYear()}-01-01T00:00:00.000Z`,
@@ -52,7 +52,7 @@ export class AppModule implements OnModuleInit {
       if (!isWeekEndDay(dateFrom) && !isWeekEndDay(dateTo)) {
         const totalDays = getDayDiff(dateTo, dateFrom);
         if (totalDays > 0 && totalDays <= 30) {
-          const id = Math.floor(Math.random() * 20) + 1;
+          const id = Math.floor(Math.random() * 5) + 1;
           const foundCarIndex = rentListData.findIndex((el) => el.id === id);
 
           if (foundCarIndex > -1) {
@@ -68,7 +68,7 @@ export class AppModule implements OnModuleInit {
               !(rentListData[foundCarIndex].dateFrom >= dateFromWithDelay) &&
               !(rentListData[foundCarIndex].dateFrom <= dateToWithDelay) &&
               !(rentListData[foundCarIndex].dateTo >= dateFromWithDelay) &&
-              !(rentListData[foundCarIndex].dateFrom <= dateToWithDelay)
+              !(rentListData[foundCarIndex].dateTo <= dateToWithDelay)
             ) {
               rentListData.push({
                 carId: id,

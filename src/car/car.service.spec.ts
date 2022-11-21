@@ -1,20 +1,16 @@
 import { Test } from '@nestjs/testing';
-import { CarController } from './car.controller';
 import { CarService } from './car.service';
 import { CarMonthlyReport } from './carReportInterfaces';
 
 describe('CatsController', () => {
-  let carController: CarController;
   let carService: CarService;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [CarController],
       providers: [CarService],
     }).compile();
 
     carService = moduleRef.get<CarService>(CarService);
-    carController = moduleRef.get<CarController>(CarController);
   });
 
   const getType = async (): Promise<CarMonthlyReport[]> => {

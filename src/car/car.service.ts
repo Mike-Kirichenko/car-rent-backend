@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBuilder } from 'src/common/classes/queryBuilder';
-import { formatDate, getDayDiff } from 'src/common/helpers';
+import { QueryBuilder } from '@classes/queryBuilder';
+import { formatDate, getDayDiff } from '@helpers';
 import { ConfigService } from '@nestjs/config';
 import { CarReport, CarMonthlyReport } from './carReportInterfaces';
 
@@ -114,6 +114,7 @@ export class CarService {
       monthEnd,
       id ? id : null,
     );
+
     const unemployedCars: CarMonthlyReport[] = await this.getType(
       'unemployed',
       monthStart,
