@@ -128,12 +128,12 @@ export class AppModule implements OnModuleInit {
   async onModuleInit() {
     const carTableExist = await this.checkTableExist('car');
     const rentListTableExist = await this.checkTableExist('rent_list');
-    const carQuery = `CREATE TABLE IF NOT EXISTS "car" (
+    const carQuery = `CREATE TABLE "car" (
       id SERIAL PRIMARY KEY,
       name VARCHAR (50) NOT NULL,
       "LP" VARCHAR (7) UNIQUE NOT NULL
     )`;
-    const rentListQuery = `CREATE TABLE IF NOT EXISTS "rent_list" (
+    const rentListQuery = `CREATE TABLE "rent_list" (
       id SERIAL PRIMARY KEY,
       "carId" SMALLINT NOT NULL,
       "dateFrom" timestamp without time zone NOT NULL,
