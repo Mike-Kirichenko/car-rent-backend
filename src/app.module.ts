@@ -89,21 +89,25 @@ export class AppModule implements OnModuleInit {
       }
     }
 
-    carTestData.forEach((car) => {
-      carsQueryString += `('${car.name}', '${car.LP}'),`;
+    carTestData.forEach((car, index) => {
+      if (index < carTestData.length - 1) {
+        carsQueryString += `('${car.name}', '${car.LP}'),`;
+      } else {
+        carsQueryString += `('${car.name}', '${car.LP}')`;
+      }
     });
 
-    rentListData.forEach((rental) => {
-      rentalQueryString += `('${rental.carId}', '${formatDate(
-        rental.dateFrom,
-      )}', '${formatDate(rental.dateTo)}', '${rental.totalPrice}'),`;
+    rentListData.forEach((rental, index) => {
+      if (index < rentListData.length - 1) {
+        rentalQueryString += `('${rental.carId}', '${formatDate(
+          rental.dateFrom,
+        )}', '${formatDate(rental.dateTo)}', '${rental.totalPrice}'),`;
+      } else {
+        rentalQueryString += `('${rental.carId}', '${formatDate(
+          rental.dateFrom,
+        )}', '${formatDate(rental.dateTo)}', '${rental.totalPrice}')`;
+      }
     });
-
-    carsQueryString = carsQueryString.substring(0, carsQueryString.length - 1);
-    rentalQueryString = rentalQueryString.substring(
-      0,
-      rentalQueryString.length - 1,
-    );
 
     await this.conn.query(carsQueryString);
     await this.conn.query(rentalQueryString);
