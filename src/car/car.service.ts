@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBuilder } from '@classes/queryBuilder';
-import { formatDate, getDayDiff } from '@helpers';
 import { ConfigService } from '@nestjs/config';
 import { CarReport, CarMonthlyReport } from './carReportInterfaces';
+import { formatDate, getDayDiff } from 'src/common/helpers';
+import { QueryBuilder } from 'src/common/classes/queryBuilder';
 
 @Injectable()
 export class CarService {
