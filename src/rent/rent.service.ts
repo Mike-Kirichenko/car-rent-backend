@@ -98,13 +98,6 @@ export class RentService {
     }
 
     const totalDays = getDayDiff(dateTo, dateFrom);
-
-    if (totalDays < 0) {
-      throw new BadRequestException({
-        msg: `Invalid dates range`,
-      });
-    }
-
     const totalPrice = countRentalPrice(totalDays);
 
     const query = `INSERT INTO rent_list ("carId", "dateFrom", "dateTo", "totalPrice") VALUES ('${id}', '${dateFrom}', '${dateTo}', ${totalPrice})`;

@@ -11,6 +11,18 @@ import {
 import { CarModule } from './car/car.module';
 import { RentModule } from './rent/rent.module';
 
+interface Car {
+  readonly name: number;
+  readonly LP: string;
+}
+
+interface Rental {
+  readonly carId: number;
+  readonly dateFrom: Date;
+  readonly dateTo: Date;
+  readonly totalPrice: number;
+}
+
 @Module({
   imports: [CarModule, RentModule, ConfigModule.forRoot({ isGlobal: true })],
 })
@@ -26,12 +38,8 @@ export class AppModule implements OnModuleInit {
     });
   }
 
-  private async seed() {
+  private generateCars(): Array<Car> {
     const carTestData = [];
-    const rentListData = [];
-
-    let carsQueryString = `INSERT INTO car (name, "LP") VALUES `;
-    let rentalQueryString = `INSERT INTO "rent_list" ("carId", "dateFrom", "dateTo", "totalPrice") VALUES `;
 
     for (let i = 0; i < 5; i++) {
       const carObject = {
@@ -40,75 +48,106 @@ export class AppModule implements OnModuleInit {
       };
       carTestData.push(carObject);
     }
+    return carTestData;
+  }
+
+  private generateRentals(): Array<Rental> {
+    const rentListData = [];
 
     while (rentListData.length < 50) {
-      let [dateFrom, dateTo] = faker.date.betweens(
-        '2017-01-01T00:00:00.000Z',
-        `${new Date().getFullYear()}-01-01T00:00:00.000Z`,
+      const numberOfDays = Math.floor(Math.random() * 30) + 1;
+
+      const dateFrom = new Date(
+        formatDate(
+          faker.date.between(
+            '2017-01-01T00:00:00.000Z',
+            `${Number(new Date().getFullYear()) + 1}-01-01T00:00:00.000Z`,
+          ),
+        ),
       );
 
-      dateFrom = new Date(formatDate(dateFrom));
-      dateTo = new Date(formatDate(dateTo));
-      if (!isWeekEndDay(dateFrom) && !isWeekEndDay(dateTo)) {
-        const totalDays = getDayDiff(dateTo, dateFrom);
-        if (totalDays > 0 && totalDays <= 30) {
-          const id = Math.floor(Math.random() * 5) + 1;
-          const foundCarIndex = rentListData.findIndex((el) => el.id === id);
+      const dateTo = new Date(dateFrom.getTime());
+      dateTo.setDate(Number(dateTo.getDate()) + numberOfDays);
 
-          if (foundCarIndex > -1) {
-            const dateFromWithDelay = dateFrom;
-            const dateFromDiff = dateFromWithDelay.getDate() - 3;
-            dateFromWithDelay.setDate(dateFromDiff);
+      isWeekEndDay(dateFrom)
+        ? dateFrom.setDate(Number(dateFrom.getDate()) + 2)
+        : true;
+      isWeekEndDay(dateTo)
+        ? dateTo.setDate(Number(dateTo.getDate()) + 2)
+        : true;
 
-            const dateToWithDelay = dateTo;
-            const dateToDiff = dateToWithDelay.getDate() + 3;
-            dateToWithDelay.setDate(dateToDiff);
+      const totalDays = getDayDiff(dateTo, dateFrom);
+      const id = Math.floor(Math.random() * 5) + 1;
+      const foundCarIndex = rentListData.findIndex((el) => el.id === id);
 
-            if (
-              !(rentListData[foundCarIndex].dateFrom >= dateFromWithDelay) &&
-              !(rentListData[foundCarIndex].dateFrom <= dateToWithDelay) &&
-              !(rentListData[foundCarIndex].dateTo >= dateFromWithDelay) &&
-              !(rentListData[foundCarIndex].dateTo <= dateToWithDelay)
-            ) {
-              rentListData.push({
-                carId: id,
-                dateFrom,
-                dateTo,
-                totalPrice: countRentalPrice(totalDays),
-              });
-            }
-          } else {
-            rentListData.push({
-              carId: id,
-              dateFrom,
-              dateTo,
-              totalPrice: countRentalPrice(totalDays),
-            });
-          }
+      if (foundCarIndex > -1) {
+        const dateFromWithDelay = dateFrom;
+        const dateFromDiff = dateFromWithDelay.getDate() - 3;
+        dateFromWithDelay.setDate(dateFromDiff);
+
+        const dateToWithDelay = dateTo;
+        const dateToDiff = dateToWithDelay.getDate() + 3;
+        dateToWithDelay.setDate(dateToDiff);
+
+        if (
+          !(rentListData[foundCarIndex].dateFrom >= dateFromWithDelay) &&
+          !(rentListData[foundCarIndex].dateFrom <= dateToWithDelay) &&
+          !(rentListData[foundCarIndex].dateTo >= dateFromWithDelay) &&
+          !(rentListData[foundCarIndex].dateTo <= dateToWithDelay)
+        ) {
+          rentListData.push({
+            carId: id,
+            dateFrom,
+            dateTo,
+            totalPrice: countRentalPrice(totalDays),
+          });
         }
+      } else {
+        rentListData.push({
+          carId: id,
+          dateFrom,
+          dateTo,
+          totalPrice: countRentalPrice(totalDays),
+        });
       }
     }
+    return rentListData;
+  }
 
-    carTestData.forEach((car, index) => {
-      if (index < carTestData.length - 1) {
-        carsQueryString += `('${car.name}', '${car.LP}'),`;
-      } else {
-        carsQueryString += `('${car.name}', '${car.LP}')`;
-      }
-    });
+  private async seed() {
+    const carTestData = this.generateCars();
+    const rentListData = this.generateRentals();
+    const carsQueryString = carTestData.reduce(
+      (queryString, valuesString, index) => {
+        if (index < carTestData.length - 1) {
+          queryString += `('${valuesString.name}', '${valuesString.LP}'),`;
+        } else {
+          queryString += `('${valuesString.name}', '${valuesString.LP}')`;
+        }
+        return queryString;
+      },
+      `INSERT INTO car (name, "LP") VALUES `,
+    );
 
-    rentListData.forEach((rental, index) => {
-      if (index < rentListData.length - 1) {
-        rentalQueryString += `('${rental.carId}', '${formatDate(
-          rental.dateFrom,
-        )}', '${formatDate(rental.dateTo)}', '${rental.totalPrice}'),`;
-      } else {
-        rentalQueryString += `('${rental.carId}', '${formatDate(
-          rental.dateFrom,
-        )}', '${formatDate(rental.dateTo)}', '${rental.totalPrice}')`;
-      }
-    });
-
+    const rentalQueryString = rentListData.reduce(
+      (queryString, valuesString, index) => {
+        if (index < rentListData.length - 1) {
+          queryString += `('${valuesString.carId}', '${formatDate(
+            valuesString.dateFrom,
+          )}', '${formatDate(valuesString.dateTo)}', '${
+            valuesString.totalPrice
+          }'),`;
+        } else {
+          queryString += `('${valuesString.carId}', '${formatDate(
+            valuesString.dateFrom,
+          )}', '${formatDate(valuesString.dateTo)}', '${
+            valuesString.totalPrice
+          }')`;
+        }
+        return queryString;
+      },
+      `INSERT INTO "rent_list" ("carId", "dateFrom", "dateTo", "totalPrice") VALUES `,
+    );
     await this.conn.query(carsQueryString);
     await this.conn.query(rentalQueryString);
   }
@@ -145,7 +184,7 @@ export class AppModule implements OnModuleInit {
         await this.conn.query(carQuery);
         await this.conn.query(rentListQuery);
         await this.seed();
-      } else console.log('Tables already exist and are seeded');
+      }
     } catch ({ message: msg }) {
       console.log({ msg });
     }
