@@ -69,12 +69,12 @@ export class AppModule implements OnModuleInit {
       const dateTo = new Date(dateFrom.getTime());
       dateTo.setDate(Number(dateTo.getDate()) + numberOfDays);
 
-      isWeekEndDay(dateFrom)
-        ? dateFrom.setDate(Number(dateFrom.getDate()) + 2)
-        : true;
-      isWeekEndDay(dateTo)
-        ? dateTo.setDate(Number(dateTo.getDate()) + 2)
-        : true;
+      if (isWeekEndDay(dateFrom)) {
+        dateFrom.setDate(Number(dateFrom.getDate()) + 2);
+      }
+      if (isWeekEndDay(dateTo)) {
+        dateTo.setDate(Number(dateTo.getDate()) + 2);
+      }
 
       const totalDays = getDayDiff(dateTo, dateFrom);
       const id = Math.floor(Math.random() * 5) + 1;
