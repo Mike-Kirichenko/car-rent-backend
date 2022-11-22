@@ -113,7 +113,21 @@ export class AppModule implements OnModuleInit {
     await this.conn.query(rentalQueryString);
   }
 
+  private async checkTableExist(tableName: string): Promise<boolean> {
+    const existQuery = `SELECT EXISTS (
+      SELECT 1 FROM 
+          pg_tables
+      WHERE 
+          schemaname = 'public' AND 
+          tablename  = '${tableName}'
+      )`;
+    const answer = await this.conn.query(existQuery);
+    return answer.rows[0].exists;
+  }
+
   async onModuleInit() {
+    const carTableExist = await this.checkTableExist('car');
+    const rentListTableExist = await this.checkTableExist('rent_list');
     const carQuery = `CREATE TABLE IF NOT EXISTS "car" (
       id SERIAL PRIMARY KEY,
       name VARCHAR (50) NOT NULL,
@@ -127,9 +141,11 @@ export class AppModule implements OnModuleInit {
       "totalPrice" double precision
     )`;
     try {
-      await this.conn.query(carQuery);
-      await this.conn.query(rentListQuery);
-      await this.seed();
+      if (!carTableExist && !rentListTableExist) {
+        await this.conn.query(carQuery);
+        await this.conn.query(rentListQuery);
+        await this.seed();
+      } else console.log('Tables already exist and are seeded');
     } catch ({ message: msg }) {
       console.log({ msg });
     }
