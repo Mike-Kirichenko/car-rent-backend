@@ -21,7 +21,7 @@ export const getDayDiff = (
       ONE_DAY_IN_MS;
   }
 
-  if (dayDiff < 0) {
+  if (dayDiff <= 0) {
     throw new BadRequestException({
       msg: `Invalid dates range`,
     });

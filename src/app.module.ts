@@ -117,13 +117,12 @@ export class AppModule implements OnModuleInit {
   private async seed() {
     const carTestData = this.generateCars();
     const rentListData = this.generateRentals();
+
     const carsQueryString = carTestData.reduce(
       (queryString, valuesString, index) => {
-        if (index < carTestData.length - 1) {
-          queryString += `('${valuesString.name}', '${valuesString.LP}'),`;
-        } else {
-          queryString += `('${valuesString.name}', '${valuesString.LP}')`;
-        }
+        queryString += `('${valuesString.name}', '${valuesString.LP}') ${
+          index < carTestData.length - 1 ? ',' : ''
+        }`;
         return queryString;
       },
       `INSERT INTO car (name, "LP") VALUES `,
@@ -131,23 +130,16 @@ export class AppModule implements OnModuleInit {
 
     const rentalQueryString = rentListData.reduce(
       (queryString, valuesString, index) => {
-        if (index < rentListData.length - 1) {
-          queryString += `('${valuesString.carId}', '${formatDate(
-            valuesString.dateFrom,
-          )}', '${formatDate(valuesString.dateTo)}', '${
-            valuesString.totalPrice
-          }'),`;
-        } else {
-          queryString += `('${valuesString.carId}', '${formatDate(
-            valuesString.dateFrom,
-          )}', '${formatDate(valuesString.dateTo)}', '${
-            valuesString.totalPrice
-          }')`;
-        }
+        queryString += `('${valuesString.carId}', '${formatDate(
+          valuesString.dateFrom,
+        )}', '${formatDate(valuesString.dateTo)}', '${
+          valuesString.totalPrice
+        }') ${index < rentListData.length - 1 ? ',' : ''}`;
         return queryString;
       },
       `INSERT INTO "rent_list" ("carId", "dateFrom", "dateTo", "totalPrice") VALUES `,
     );
+
     await this.conn.query(carsQueryString);
     await this.conn.query(rentalQueryString);
   }

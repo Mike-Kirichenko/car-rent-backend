@@ -3,7 +3,7 @@ const basicSale = 0.05;
 
 export const countRentalPrice = (days: number): number => {
   let sum = 0;
-  if (days === 0) return basicPrice;
+  if (days === 1) return basicPrice;
 
   for (let i = 1; i <= days; i++) {
     if (i >= 1 && i <= 4) {
