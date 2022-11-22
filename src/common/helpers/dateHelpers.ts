@@ -1,3 +1,5 @@
+import { BadRequestException } from '@nestjs/common';
+
 export const formatDate = (date: Date): string => {
   const datePart = date.getDate().toString().padStart(2, '0');
   const monthPart = (Number(date.getMonth()) + 1).toString().padStart(2, '0');
@@ -18,6 +20,13 @@ export const getDayDiff = (
       (new Date(dateTo).valueOf() - new Date(dateFrom).valueOf()) /
       ONE_DAY_IN_MS;
   }
+
+  if (dayDiff <= 0) {
+    throw new BadRequestException({
+      msg: `Invalid dates range`,
+    });
+  }
+
   return dayDiff;
 };
 

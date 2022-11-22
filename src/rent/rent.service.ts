@@ -1,22 +1,18 @@
 import { BadRequestException, Injectable, HttpException } from '@nestjs/common';
-import { formatDate, getDayDiff, isWeekEndDay } from 'src/common/helpers';
+import {
+  formatDate,
+  getDayDiff,
+  isWeekEndDay,
+  countRentalPrice,
+} from 'src/common/helpers';
 import { QueryBuilder } from 'src/common/classes/queryBuilder';
 
 @Injectable()
 export class RentService {
-  private basicPrice = 100;
-  private basicSale = 0.05;
   constructor(private queryBuilder: QueryBuilder) {}
-
   async checkAvaliability(dto: { id: number; dateFrom: Date; dateTo: Date }) {
     const { id, dateFrom, dateTo } = dto;
     const totalDays = getDayDiff(dateTo, dateFrom);
-
-    if (totalDays < 0) {
-      throw new BadRequestException({
-        msg: `Invalid dates range`,
-      });
-    }
 
     if (totalDays > 30) {
       throw new BadRequestException({
@@ -63,30 +59,6 @@ export class RentService {
     return avaliableCars;
   }
 
-  private countRentalPrice(days: number): number {
-    let sum = 0;
-    if (days < 0)
-      throw new BadRequestException({
-        msg: `Invalid dates range`,
-      });
-
-    if (days === 0) return this.basicPrice;
-
-    for (let i = 1; i <= days; i++) {
-      if (i >= 1 && i <= 4) {
-        sum += this.basicPrice;
-      } else if (i >= 5 && i <= 9) {
-        sum += this.basicPrice - this.basicPrice * this.basicSale;
-      } else if (i >= 10 && i <= 17) {
-        sum += this.basicPrice - this.basicPrice * this.basicSale * 2;
-      } else if (i >= 18 && i <= 29) {
-        sum += this.basicPrice - this.basicPrice * this.basicSale * 3;
-      }
-    }
-
-    return sum;
-  }
-
   async getRentalPrice(dto: { id: number; dateFrom: Date; dateTo: Date }) {
     const { id, dateFrom, dateTo } = dto;
     const query = `SELECT id FROM car WHERE "car"."id"='${id}' LIMIT 1`;
@@ -98,7 +70,13 @@ export class RentService {
 
     const daysOfRental: number = getDayDiff(dateTo, dateFrom);
 
-    const cost: number = this.countRentalPrice(daysOfRental);
+    if (daysOfRental < 0) {
+      throw new BadRequestException({
+        msg: `Invalid dates range`,
+      });
+    }
+
+    const cost: number = countRentalPrice(daysOfRental);
 
     return {
       carId: id,
@@ -120,7 +98,7 @@ export class RentService {
     }
 
     const totalDays = getDayDiff(dateTo, dateFrom);
-    const totalPrice = this.countRentalPrice(totalDays);
+    const totalPrice = countRentalPrice(totalDays);
 
     const query = `INSERT INTO rent_list ("carId", "dateFrom", "dateTo", "totalPrice") VALUES ('${id}', '${dateFrom}', '${dateTo}', ${totalPrice})`;
     const newRental = await this.queryBuilder.runQuery(query);
