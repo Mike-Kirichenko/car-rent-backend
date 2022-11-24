@@ -10,7 +10,7 @@ import { QueryBuilder } from 'src/common/classes/queryBuilder';
 @Injectable()
 export class RentService {
   constructor(private queryBuilder: QueryBuilder) {}
-  async checkAvaliability(dto: { id: number; dateFrom: Date; dateTo: Date }) {
+  async checkAvaliability(dto: { id?: number; dateFrom: Date; dateTo: Date }) {
     const { id, dateFrom, dateTo } = dto;
     const totalDays = getDayDiff(dateTo, dateFrom);
 
@@ -85,13 +85,9 @@ export class RentService {
     };
   }
 
-  async checkout(
-    idDto: { id: number },
-    bodyDto: { dateFrom: Date; dateTo: Date },
-  ) {
-    const { id } = idDto;
-    const { dateFrom, dateTo } = bodyDto;
-    const carInfo = await this.checkAvaliability({ ...idDto, ...bodyDto });
+  async checkout(dto: { id: number; dateFrom: Date; dateTo: Date }) {
+    const { id, dateFrom, dateTo } = dto;
+    const carInfo = await this.checkAvaliability(dto);
 
     if (!carInfo.avaliable) {
       throw new BadRequestException(carInfo);

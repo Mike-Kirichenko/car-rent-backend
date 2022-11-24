@@ -1,25 +1,43 @@
-import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Param, Get, Post } from '@nestjs/common';
-import { CarsAvaliableDto, DatesDto } from 'src/common/dto';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Param,
+  Get,
+  Post,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { CarsAvaliableDto, DatesDto } from './dto';
 import { RentService } from './rent.service';
-import { IdDto } from './dto/id.dto';
 
 @ApiTags('Rental')
 @Controller('rent')
 export class RentController {
   constructor(private rentService: RentService) {}
 
-  @Get('/avaliability/:dateFrom/:dateTo/:id?')
+  @Get('/avaliability/:dateFrom/:dateTo/:id')
   @ApiResponse({
     status: 200,
-    description: `In case if id is passed checks and returns answer on question: If car found by specified id is avaliable in given date range. 
-    Otherwise returns all avaliable cars in same range`,
+    description: `Returns answer object if car found by specified id is avaliable in given date range.`,
   })
   @ApiResponse({
     status: 400,
     description: `Returns error message if invalid date range is passed`,
   })
   checkAvailability(@Param() dto: CarsAvaliableDto) {
+    return this.rentService.checkAvaliability(dto);
+  }
+
+  @Get('/car-list/:dateFrom/:dateTo')
+  @ApiResponse({
+    status: 200,
+    description: `Returns list of cars that are avaliable in given date range.`,
+  })
+  @ApiResponse({
+    status: 400,
+    description: `Returns error message if invalid date range is passed`,
+  })
+  checkAllAvaliable(@Param() dto: DatesDto) {
     return this.rentService.checkAvaliability(dto);
   }
 
@@ -49,8 +67,11 @@ export class RentController {
     status: 400,
     description: `Returns error message if invalid date range is passed`,
   })
-  @ApiBody({ type: DatesDto })
-  checkout(@Param() idDto: IdDto, @Body() bodyDto: DatesDto) {
-    return this.rentService.checkout(idDto, bodyDto);
+  checkout(@Param('id', ParseIntPipe) id: number, @Body() bodyDto: DatesDto) {
+    return this.rentService.checkout({
+      id,
+      dateFrom: bodyDto.dateFrom,
+      dateTo: bodyDto.dateTo,
+    });
   }
 }
