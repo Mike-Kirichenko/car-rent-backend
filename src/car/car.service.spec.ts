@@ -16,12 +16,27 @@ describe('CatsController', () => {
   });
 
   const getType = async (): Promise<CarMonthlyReport[]> => {
-    const cars = {
-      carId: 2,
-      daysInMonth: 0,
-      LP: 'TE-001-ST',
-      percentInMonth: 0,
-    };
+    const cars = [
+      {
+        carId: 2,
+        daysInMonth: 0,
+        LP: 'TE-001-ST',
+        percentInMonth: 0,
+      },
+      {
+        carId: 11,
+        daysInMonth: 0,
+        LP: 'TE-002-ST',
+        percentInMonth: 0,
+      },
+      {
+        carId: 12,
+        daysInMonth: 8,
+        LP: 'TE-003-ST',
+        percentInMonth: 27,
+      },
+    ];
+
     return new Promise((resolve) => resolve(cars));
   };
 
