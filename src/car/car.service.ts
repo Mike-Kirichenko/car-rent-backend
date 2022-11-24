@@ -62,7 +62,7 @@ export class CarService {
     type: string,
     monthStart: string,
     monthEnd: string,
-    id: number,
+    id?: number,
   ): Promise<CarMonthlyReport[]> {
     let query: string;
     if (type === 'employed') {
@@ -89,7 +89,7 @@ export class CarService {
     return cars;
   }
 
-  async checkAvgCarEmployment(dto: { id: number; month: string }) {
+  async checkAvgCarEmployment(dto: { id?: number; month: string }) {
     const { id, month } = dto;
     const [year, monthNum] = month.split('-');
 

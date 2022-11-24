@@ -1,4 +1,6 @@
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
+import { QueryBuilder } from '../../src/common/classes/queryBuilder';
 import { CarService } from './car.service';
 import { CarMonthlyReport } from './carReportInterfaces';
 
@@ -7,7 +9,7 @@ describe('CatsController', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [CarService],
+      providers: [CarService, QueryBuilder, ConfigService],
     }).compile();
 
     carService = moduleRef.get<CarService>(CarService);
@@ -16,7 +18,7 @@ describe('CatsController', () => {
   const getType = async (): Promise<CarMonthlyReport[]> => {
     const unemployedCars = [
       {
-        carId: 10,
+        carId: 2,
         daysInMonth: 0,
         LP: 'TE-001-ST',
         percentInMonth: 0,
@@ -34,16 +36,17 @@ describe('CatsController', () => {
         percentInMonth: 27,
       },
     ];
-    return unemployedCars;
+
+    return new Promise((resolve) => resolve(unemployedCars));
   };
 
   describe('getType', () => {
-    it('should return array of employed and unemployed cars', async () => {
+    it('should return array of employed and unemployed cars', () => {
       const cars = getType();
       jest.spyOn(carService, 'getType').mockImplementation(() => getType());
-      expect(
-        await carService.checkAvgCarEmployment({ month: '2022-09', id: 2 }),
-      ).toEqual(cars);
+      expect(carService.checkAvgCarEmployment({ month: '2022-09' })).toEqual(
+        cars,
+      );
     });
   });
 });
