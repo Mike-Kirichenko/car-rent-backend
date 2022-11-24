@@ -70,7 +70,7 @@ export class AppModule implements OnModuleInit {
       dateTo.setDate(Number(dateTo.getDate()) + numberOfDays);
 
       if (isWeekEndDay(dateFrom)) {
-        dateFrom.setDate(Number(dateFrom.getDate()) + 2);
+        dateFrom.setDate(Number(dateFrom.getDate()) - 2);
       }
       if (isWeekEndDay(dateTo)) {
         dateTo.setDate(Number(dateTo.getDate()) + 2);
@@ -175,10 +175,10 @@ export class AppModule implements OnModuleInit {
       if (!carTableExist && !rentListTableExist) {
         await this.conn.query(carQuery);
         await this.conn.query(rentListQuery);
-        await this.seed();
+        this.seed();
       }
-    } catch ({ message: msg }) {
-      console.log({ msg });
+    } catch (err) {
+      console.log(err);
     }
   }
 }
