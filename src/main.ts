@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,3 +20,18 @@ async function bootstrap() {
   await app.listen(3000);
 }
 bootstrap();
+
+async function bootstrapMicroservices() {
+  const app = await NestFactory.createMicroservice(AppModule, {
+    transport: Transport.RMQ,
+    options: {
+      urls: ['amqp://guest:guest@localhost:5672/cars-import'],
+      queue: 'cars-import',
+      queueOptions: {
+        durable: false,
+      },
+    },
+  });
+  await app.listen();
+}
+bootstrapMicroservices();
