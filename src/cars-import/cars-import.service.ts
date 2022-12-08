@@ -5,8 +5,13 @@ import { Injectable } from '@nestjs/common';
 export class CarsImportService {
   constructor(private queryBuilder: QueryBuilder) {}
   public async writeCarsToDbByChunks(data: string[]) {
-    const [name, LP] = data;
-    const query = `INSERT INTO car ("name", "LP") VALUES ('${name}', '${LP}')`;
+    const insertQuery = [];
+    for (const carRow of data) {
+      const [name, LP] = carRow;
+      insertQuery.push(`('${name}', '${LP}')`);
+    }
+    insertQuery.join(',');
+    const query = `INSERT INTO car ("name", "LP") VALUES ${insertQuery}`;
     await this.queryBuilder.runQuery(query);
   }
 }
