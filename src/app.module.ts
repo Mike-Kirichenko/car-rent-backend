@@ -10,6 +10,7 @@ import {
 } from './common/helpers';
 import { CarModule } from './car/car.module';
 import { RentModule } from './rent/rent.module';
+import { CarsImportModule } from './cars-import/cars-import.module';
 
 interface Car {
   readonly name: number;
@@ -24,7 +25,12 @@ interface Rental {
 }
 
 @Module({
-  imports: [CarModule, RentModule, ConfigModule.forRoot({ isGlobal: true })],
+  imports: [
+    CarModule,
+    RentModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    CarsImportModule,
+  ],
 })
 export class AppModule implements OnModuleInit {
   conn: any;
