@@ -17,12 +17,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
   /*----------------------Swagger docs page build part end-----------------------*/
-  await app.listen(3000);
-}
-bootstrap();
-
-async function bootstrapMicroservices() {
-  const app = await NestFactory.createMicroservice(AppModule, {
+  app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
       urls: ['amqp://guest:guest@localhost:5672/cars-import'],
@@ -32,6 +27,8 @@ async function bootstrapMicroservices() {
       },
     },
   });
-  await app.listen();
+
+  await app.startAllMicroservices();
+  await app.listen(3000);
 }
-bootstrapMicroservices();
+bootstrap();
