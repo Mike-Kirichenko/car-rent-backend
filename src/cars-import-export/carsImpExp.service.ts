@@ -54,6 +54,7 @@ export class CarsImpExpService {
       await this.redis.set(genKey, `${i}/${count}`);
     }
     await this.redis.set(genKey, `done`);
+    writableStream.end();
     return { fileWriteSession: genKey };
   }
 
