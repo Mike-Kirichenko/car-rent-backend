@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { createWriteStream } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { QueryBuilder } from '@classes/queryBuilder';
@@ -58,13 +59,14 @@ export class CarsImpExpService {
 
   public async getExportedListFile(session: string) {
     const fileStatus = await this.redis.get(session);
+    const absolutePath = path.resolve(`${this.fileFolder}/${session}.csv`);
+
     if (!fileStatus)
       return {
         status: 404,
         msg: `${this.fileFolder}/${session}.csv doesn't exist`,
       };
-    if (fileStatus === 'done')
-      return { status: 200, fileLink: `${this.fileFolder}/${session}.csv` };
+    if (fileStatus === 'done') return { status: 200, fileLink: absolutePath };
     return { fileStatus };
   }
 }
