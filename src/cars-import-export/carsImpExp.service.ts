@@ -64,7 +64,7 @@ export class CarsImpExpService {
     if (!fileStatus)
       return {
         status: 404,
-        msg: `${this.fileFolder}/${session}.csv doesn't exist`,
+        msg: `${absolutePath} doesn't exist`,
       };
     if (fileStatus === 'done') return { status: 200, fileLink: absolutePath };
     return { fileStatus };
