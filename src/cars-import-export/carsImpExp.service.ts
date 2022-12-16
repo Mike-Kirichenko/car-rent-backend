@@ -1,10 +1,27 @@
 import { createWriteStream } from 'fs';
+import { access } from 'fs/promises';
+import { v4 as uuidv4 } from 'uuid';
 import { QueryBuilder } from '@classes/queryBuilder';
 import { Injectable } from '@nestjs/common';
+import Redis from 'ioredis';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CarsImpExpService {
-  constructor(private queryBuilder: QueryBuilder) {}
+  redis: any;
+  filePrefix: string;
+  fileFolder: string;
+  constructor(
+    private queryBuilder: QueryBuilder,
+    private config: ConfigService,
+  ) {
+    this.redis = new Redis({
+      port: this.config.get('REDIS_PORT'),
+      host: this.config.get('DB_HOST'),
+    });
+    this.filePrefix = 'cars-list';
+    this.fileFolder = 'uploads';
+  }
 
   public async writeCarsToDbByChunks(data: string[]) {
     const insertQuery = [];
@@ -17,11 +34,15 @@ export class CarsImpExpService {
     await this.queryBuilder.runQuery(query);
   }
 
-  public async exportCarsList() {
+  public async exportAndGetStatus() {
+    const genKey = `${this.filePrefix}-${uuidv4()}`;
     const limit = 100;
-    const writableStream = createWriteStream('uploads/cars.csv');
+    const writableStream = createWriteStream(
+      `${this.fileFolder}/${genKey}.csv`,
+    );
     const countQuery = `SELECT COUNT (*) FROM car`;
     const [{ count }] = await this.queryBuilder.runQuery(countQuery);
+    await this.redis.set(genKey, `0/${count}`);
     for (let i = 0; i < count; i += limit) {
       const query = `SELECT * FROM car ORDER BY ID ASC OFFSET ${i} LIMIT ${limit} `;
       const rows = await this.queryBuilder.runQuery(query);
@@ -30,6 +51,21 @@ export class CarsImpExpService {
         writableStream.write(`${name}, ${LP}`);
         writableStream.write(`\n`);
       }
+      await this.redis.set(genKey, `${i}/${count}`);
     }
+    await this.redis.set(genKey, `done`);
+    return { fileWriteSession: genKey };
+  }
+
+  public async getExportedListFile(session: string) {
+    const fileStatus = await this.redis.get(session);
+    if (!fileStatus)
+      return {
+        status: 404,
+        msg: `${this.fileFolder}/${session}.csv doesn't exist`,
+      };
+    if (fileStatus === 'done')
+      return { status: 200, fileLink: `${this.fileFolder}/${session}.csv` };
+    return { fileStatus };
   }
 }

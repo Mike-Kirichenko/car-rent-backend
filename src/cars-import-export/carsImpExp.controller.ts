@@ -13,6 +13,11 @@ export class CarsImpExpController {
 
   @EventPattern('export_list')
   async exportCars() {
-    return await this.carsImpExpService.exportCarsList();
+    return await this.carsImpExpService.exportAndGetStatus();
+  }
+
+  @EventPattern('get_exported_list_file')
+  async getExportedFile(session: string) {
+    return await this.carsImpExpService.getExportedListFile(session);
   }
 }
